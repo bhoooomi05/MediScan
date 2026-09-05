@@ -26,7 +26,6 @@ MediScan aims to make the initial assessment easier by allowing users to:
 
 ## 💡 How It Works
 
-```text
 Upload Injury Image
         ↓
 Describe Symptoms
