@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediScan — Wound &amp; Burn Assessment</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --pink: #ec4899;
+    --pink-dark:#db2777;
+    --purple:#8b5cf6;
+    --purple-dark:#7c3aed;
+    --bg:#f7f3fb;
+    --card:#ffffff;
+    --ink:#241b34;
+    --muted:#8b83a1;
+    --line:#ece7f6;
+    --green:#22c55e;
+    --orange:#f59e0b;
+    --red:#f43f5e;
+    --radius:18px;
+    --shadow: 0 8px 24px rgba(107, 70, 193, 0.08);
+  }
+  body.dark{
+    --bg:#151021;
+    --card:#211a30;
+    --ink:#f3eefb;
+    --muted:#a99fc4;
+    --line:#332a49;
+    --shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color:var(--ink);
+    transition:background .2s ease, color .2s ease;
+  }
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;}
+  input,select,textarea{font-family:inherit;}
+  .hidden{display:none !important;}
+  .app{
+    display:grid;
+    grid-template-columns: 250px 1fr;
+    min-height:100vh;
+  }
+
+  /* ---------- AUTH SCREEN ---------- */
+  .auth-screen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:24px; background:radial-gradient(circle at 20% 20%, #fbe8f4, transparent 45%), radial-gradient(circle at 80% 80%, #ece2fb, transparent 45%), var(--bg);
+  }
+  .auth-card{
+    width:100%;max-width:380px;background:var(--card);border-radius:22px;
+    box-shadow:var(--shadow);padding:32px 30px;
+  }
+  .auth-tabs{display:flex;background:#f6f1fb;border-radius:12px;padding:4px;margin-bottom:20px;}
+  body.dark .auth-tabs{background:#2a2340;}
+  .auth-tab{flex:1;border:none;background:none;padding:9px 0;border-radius:9px;font-weight:700;font-size:13.5px;color:#6b5b95;cursor:pointer;}
+  .auth-tab.active{background:linear-gradient(135deg,var(--pink),var(--purple-dark));color:#fff;}
+  .auth-form{display:flex;flex-direction:column;gap:4px;}
+  .auth-form label{font-size:12.5px;font-weight:700;color:#54506a;margin:10px 0 2px;}
+  body.dark .auth-form label{color:var(--muted);}
+  .auth-form input{
+    border:1px solid var(--line);border-radius:11px;padding:11px 14px;font-size:13.5px;
+    background:var(--card);color:var(--ink);
+  }
+  .auth-form input:focus{outline:2px solid var(--purple);outline-offset:1px;}
+  .auth-error{color:var(--red);font-size:12.5px;font-weight:600;min-height:16px;margin-top:8px;}
+  .auth-hint{font-size:11.5px;color:var(--muted);text-align:center;margin:18px 0 0;line-height:1.5;}
+  .auth-card .primary-btn{margin-top:16px;}
+
+  /* ---------- TOAST ---------- */
+  #toastHost{position:fixed;top:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:10px;}
+  .toast{
+    background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:600;
+    box-shadow:0 8px 20px rgba(0,0,0,.25);max-width:320px;animation:toastIn .25s ease;
+  }
+  .toast.error{background:#d92d4a;}
+  .toast.success{background:#16a34a;}
+  @keyframes toastIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    background:var(--card);
+    border-right:1px solid var(--line);
+    padding:24px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:28px;
+    padding:0 6px;
+  }
+  .brand-icon{
+    width:38px;height:38px;border-radius:11px;
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:16px;flex:none;
+  }
+  .brand-name{font-weight:800;font-size:15px;line-height:1.1;}
+  .brand-sub{font-size:11px;color:var(--muted);}
+
+  .nav-link{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 14px;border-radius:12px;
+    font-size:14px;color:#54506a;font-weight:500;
+    cursor:pointer;
+    border:none;background:none;width:100%;text-align:left;
+    position:relative;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+  }
+  body.dark .nav-link{color:#c9c0e0;}
+  .nav-link i{width:18px;text-align:center;color:#a79fc2;transition:color .18s ease;}
+  .nav-link:hover{background:#f6f1fb;transform:translateX(2px);}
+  body.dark .nav-link:hover{background:#2a2340;}
+  .nav-link.active{
+    background:linear-gradient(135deg,var(--pink),var(--purple-dark));
+    color:#fff;
+    box-shadow:0 6px 16px rgba(219,39,119,.25);
+  }
+  .nav-link.active i{color:#fff;}
+
+  .emergency-box{
+    margin-top:auto;
+    background:#fdf1f7;
+    border:1px solid #fbdce9;
+    border-radius:16px;
+    padding:14px;
+    text-align:center;
+  }
+  body.dark .emergency-box{background:#2c1c28;border-color:#4a2a3c;}
+  .emergency-box p{margin:0 0 10px;font-size:12.5px;color:#7a6f8f;font-weight:600;}
+  .call-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    background:linear-gradient(135deg,var(--pink),var(--pink-dark));
+    color:#fff;border:none;border-radius:10px;
+    padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer;
+  }
+  .logout-link{margin-top:10px;font-size:12px;color:var(--muted);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;padding:8px;}
+  .logout-link:hover{color:var(--red);}
+
+  /* ---------- MAIN ---------- */
+  .main{padding:24px 28px 8px; overflow:hidden; position:relative;}
+  .main-scroll{ }
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .welcome h1{margin:0;font-size:22px;font-weight:800;}
+  .welcome p{margin:2px 0 0;color:var(--muted);font-size:13.5px;}
+  .top-actions{display:flex;align-items:center;gap:16px;}
+  .search{
+    display:flex;align-items:center;gap:10px;
+    background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:10px 16px;width:280px;
+    color:var(--muted);font-size:13.5px;
+  }
+  .search input{border:none;outline:none;background:none;color:var(--ink);width:100%;font-size:13.5px;}
+  .icon-btn{
+    width:40px;height:40px;border-radius:50%;
+    background:var(--card);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    position:relative;color:#54506a;cursor:pointer;
+  }
+  body.dark .icon-btn{color:#c9c0e0;}
+  .icon-btn .dot{
+    position:absolute;top:8px;right:9px;width:7px;height:7px;
+    background:var(--pink);border-radius:50%;border:2px solid var(--card);
+  }
+  .avatar{
+    width:40px;height:40px;border-radius:50%;
+    background:linear-gradient(135deg,#f59e0b,var(--pink));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+    cursor:pointer;
+  }
+
+  /* ---------- TAB PAGES (sliding) ---------- */
+  .pages{position:relative;}
+  .page{
+    display:none;
+    flex-direction:column;
+    gap:22px;
+    animation: slideIn .38s cubic-bezier(.22,.9,.35,1);
+  }
+  .page.active{display:flex;}
+  @keyframes slideIn{
+    from{ opacity:0; transform: translateX(24px); }
+    to{ opacity:1; transform: translateX(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .page{animation:none;}
+  }
+
+  .page-header{display:flex;align-items:center;gap:12px;margin-bottom:-6px;}
+  .page-header h2{margin:0;font-size:20px;font-weight:800;}
+  .page-header .sub{font-size:13px;color:var(--muted);margin:2px 0 0;}
+  .page-icon{
+    width:42px;height:42px;border-radius:13px;
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;flex:none;
+  }
+
+  /* stats row */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  .stat-card{
+    background:var(--card);border-radius:var(--radius);
+    padding:18px 20px;box-shadow:var(--shadow);
+  }
+  .stat-card .label{font-size:13px;color:var(--muted);font-weight:600;}
+  .stat-card .value{font-size:28px;font-weight:800;margin:6px 0 8px;}
+  .stat-card .delta{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:4px;}
+  .delta.up{color:var(--purple-dark);}
+  .delta.green{color:var(--green);}
+  .delta.orange{color:var(--orange);}
+  .delta.red{color:var(--red);}
+
+  .row-2col{display:grid;grid-template-columns: 1fr 1.35fr;gap:18px;}
+  .panel{
+    background:var(--card);border-radius:var(--radius);
+    padding:20px 22px;box-shadow:var(--shadow);
+  }
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .panel-head h3{margin:0;font-size:16px;font-weight:800;}
+  .view-all{font-size:12.5px;color:var(--pink-dark);font-weight:700;cursor:pointer;}
+
+  .donut-wrap{display:flex;align-items:center;gap:22px;}
+  .donut{position:relative;width:150px;height:150px;flex:none;}
+  .donut-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .donut-center .n{font-size:26px;font-weight:800;}
+  .donut-center .t{font-size:11.5px;color:var(--muted);}
+  .legend{display:flex;flex-direction:column;gap:12px;}
+  .legend-item{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;}
+  .legend-item .sw{width:9px;height:9px;border-radius:50%;flex:none;}
+  .legend-item .pct{margin-left:auto;color:var(--muted);font-weight:700;}
+
+  .recent-item{display:flex;align-items:center;gap:12px;padding:10px 6px;border-radius:12px;}
+  .recent-item:hover{background:#faf7ff;}
+  body.dark .recent-item:hover{background:#241d38;}
+  .recent-thumb{width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;background:#eee;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;}
+  .recent-info{flex:1;min-width:0;}
+  .recent-info .name{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .recent-info .sev{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:5px;margin-top:2px;}
+  .sev-dot{width:7px;height:7px;border-radius:50%;flex:none;}
+  .recent-time{font-size:12px;color:var(--muted);text-align:right;flex:none;}
+
+  .promo{
+    background:linear-gradient(120deg,#7c3aed,#c026a3 60%,#ec4899);
+    border-radius:22px;color:#fff;
+    padding:30px 34px;display:flex;align-items:center;justify-content:space-between;
+    gap:20px;position:relative;overflow:hidden;
+  }
+  .promo h2{margin:0 0 8px;font-size:22px;font-weight:800;}
+  .promo p{margin:0 0 18px;font-size:13.5px;opacity:.9;max-width:420px;}
+  .promo-btn{
+    background:#fff;color:var(--pink-dark);border:none;border-radius:11px;
+    padding:11px 20px;font-weight:800;font-size:13.5px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .promo-art{
+    position:relative;width:150px;height:150px;flex:none;
+    perspective:700px;
+  }
+  .promo-globe{
+    position:absolute;inset:22px;border-radius:50%;
+    background:
+      radial-gradient(circle at 32% 28%, rgba(255,255,255,.65), transparent 42%),
+      radial-gradient(circle at 55% 60%, #fbcfe8, #d946ef 45%, #7c3aed 90%);
+    box-shadow:
+      0 0 50px rgba(236,72,153,.55),
+      0 0 90px rgba(139,92,246,.35),
+      inset 0 0 26px rgba(255,255,255,.35);
+    animation: floatGlobe 4.2s ease-in-out infinite;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .promo-globe::after{
+    content:'';position:absolute;inset:0;border-radius:50%;
+    background:repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 8px, rgba(255,255,255,.06) 9px);
+    opacity:.5;
+  }
+  .promo-globe i{
+    position:relative;font-size:34px;color:#fff;
+    filter:drop-shadow(0 0 10px rgba(255,255,255,.85));
+    animation: floatGlobe 4.2s ease-in-out infinite;
+  }
+  .promo-ring{
+    position:absolute;inset:6px;border-radius:50%;
+    border:2.5px solid rgba(255,255,255,.85);
+    border-bottom-color:transparent;
+    border-left-color:transparent;
+    box-shadow:0 0 14px rgba(255,255,255,.5);
+  }
+  .promo-ring-1{
+    transform:rotateX(72deg) rotateZ(0deg);
+    animation: spinRing1 3.4s linear infinite;
+  }
+  .promo-ring-2{
+    inset:-6px;
+    border-color:rgba(255,255,255,.55);
+    border-top-color:transparent;
+    border-right-color:transparent;
+    transform:rotateX(72deg) rotateY(35deg) rotateZ(0deg);
+    animation: spinRing2 5s linear infinite reverse;
+  }
+  .promo-particle{
+    position:absolute;color:#fff;opacity:.9;
+    animation: floatParticle 3s ease-in-out infinite;
+  }
+  .promo-particle.p1{top:2px;left:0;font-size:15px;color:#fde2f3;animation-delay:0s;}
+  .promo-particle.p2{bottom:14px;right:-6px;font-size:19px;color:#fbcfe8;animation-delay:.7s;}
+  .promo-particle.p3{
+    top:16px;right:2px;width:8px;height:8px;border-radius:50%;
+    background:radial-gradient(circle,#fff,#fbcfe8);
+    box-shadow:0 0 8px rgba(255,255,255,.8);
+    animation-delay:1.1s;
+  }
+  .promo-particle.p4{
+    bottom:2px;left:6px;width:6px;height:6px;border-radius:50%;
+    background:radial-gradient(circle,#fff,#e9d5ff);
+    box-shadow:0 0 8px rgba(255,255,255,.8);
+    animation-delay:1.6s;
+  }
+  .promo-particle.p5{
+    top:48%;left:-10px;width:5px;height:5px;border-radius:50%;
+    background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9);
+    animation-delay:.4s;
+  }
+  @keyframes floatGlobe{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-9px); }
+  }
+  @keyframes spinRing1{
+    from{ transform:rotateX(72deg) rotateZ(0deg); }
+    to{ transform:rotateX(72deg) rotateZ(360deg); }
+  }
+  @keyframes spinRing2{
+    from{ transform:rotateX(72deg) rotateY(35deg) rotateZ(0deg); }
+    to{ transform:rotateX(72deg) rotateY(35deg) rotateZ(360deg); }
+  }
+  @keyframes floatParticle{
+    0%,100%{ transform:translateY(0) translateX(0); }
+    50%{ transform:translateY(-10px) translateX(3px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .promo-globe, .promo-globe i, .promo-ring-1, .promo-ring-2, .promo-particle{animation:none;}
+  }
+
+  .flow-grid{display:grid;grid-template-columns: 1fr 1fr 1fr; gap:18px;}
+  .step-badge{font-size:12px;color:var(--muted);font-weight:700;}
+  .panel-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .upload-box{
+    margin-top:14px;border-radius:16px;overflow:hidden;position:relative;
+    height:180px;background:linear-gradient(160deg,#ffe3d0,#ffd0dd);
+    cursor:pointer;
+  }
+  .upload-box img{width:100%;height:100%;object-fit:cover;display:block;}
+  .upload-box.empty img{display:none;}
+  .upload-box .cam-btn{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:52px;height:52px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;color:var(--pink-dark);
+    font-size:18px;box-shadow:0 6px 18px rgba(0,0,0,.15);
+  }
+  .upload-box.empty .change-pill{display:none;}
+  .change-pill{
+    position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+    background:rgba(255,255,255,.92);padding:6px 14px;border-radius:20px;
+    font-size:11.5px;font-weight:700;color:#54506a;display:flex;align-items:center;gap:6px;
+  }
+  .field-label{font-size:13px;font-weight:700;margin:16px 0 6px;color:#42395c;}
+  body.dark .field-label{color:#d9d0f0;}
+  .field-select, .field-input, .field-textarea{
+    width:100%;border:1px solid var(--line);border-radius:11px;
+    padding:11px 14px;font-size:13.5px;color:var(--ink);background:var(--card);appearance:none;
+  }
+  .field-textarea{resize:vertical;min-height:70px;font-family:inherit;}
+  .field-with-mic{position:relative;}
+  .field-with-mic textarea{padding-right:44px;}
+  .mic-inline{
+    position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:50%;border:none;
+    background:#f6f1fb;color:var(--purple-dark);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .mic-inline.listening{background:var(--pink-dark);color:#fff;animation:pulseMic 1s ease-in-out infinite;}
+  @keyframes pulseMic{0%,100%{box-shadow:0 0 0 0 rgba(219,39,119,.5);}50%{box-shadow:0 0 0 8px rgba(219,39,119,0);}}
+  .pain-slider{width:100%;accent-color:var(--pink-dark);}
+  .pain-val{font-weight:800;font-size:13px;color:var(--pink-dark);}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .chip{border:1px solid var(--line);border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:700;color:#54506a;cursor:pointer;background:var(--card);}
+  body.dark .chip{color:#c9c0e0;}
+  .chip.active{background:var(--pink-dark);border-color:var(--pink-dark);color:#fff;}
+  .chip.plus{color:var(--pink-dark);border-color:#fbcfe8;}
+  .primary-btn{
+    width:100%;margin-top:18px;border:none;border-radius:13px;
+    background:linear-gradient(135deg,var(--pink),var(--purple-dark));
+    color:#fff;font-weight:800;font-size:14px;padding:13px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .primary-btn:disabled{opacity:.6;cursor:not-allowed;}
+  .secondary-btn{
+    border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;
+    padding:11px 16px;font-weight:700;font-size:13px;cursor:pointer;
+  }
+
+  .spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;animation:spin .7s linear infinite;display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .result-check{
+    width:74px;height:74px;border-radius:50%;margin:6px auto 10px;
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;
+    box-shadow:0 8px 20px rgba(219,39,119,.3);
+  }
+  .result-title{text-align:center;font-weight:800;font-size:15px;margin-bottom:14px;}
+  .diag-card{background:#faf7ff;border-radius:15px;padding:16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  body.dark .diag-card{background:#241d38;}
+  .diag-card h4{margin:0;font-size:19px;font-weight:800;}
+  .diag-card .sub{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .diag-icon{width:44px;height:44px;border-radius:50%;background:#ffe3d0;display:flex;align-items:center;justify-content:center;color:#f97316;font-size:18px;flex:none;}
+  .stat-pair{display:flex;justify-content:space-between;margin-top:12px;}
+  .stat-pair div span.tag{display:block;font-size:11.5px;color:var(--muted);font-weight:600;}
+  .stat-pair .sev-val{font-weight:800;font-size:15px;}
+  .stat-pair .conf-val{font-weight:800;font-size:15px;}
+  .action-card{background:#fff1f5;border:1px solid #ffd7e4;border-radius:15px;padding:15px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;}
+  body.dark .action-card{background:#2c1c28;border-color:#4a2a3c;}
+  .action-card .eyebrow{font-size:11px;color:var(--pink-dark);font-weight:800;text-transform:uppercase;}
+  .action-card h4{margin:4px 0 2px;font-size:14.5px;font-weight:800;}
+  .action-card p{margin:0;font-size:12px;color:var(--muted);}
+  .arrow-circle{width:38px;height:38px;border-radius:50%;background:var(--pink-dark);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;}
+  .care-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .care-list li{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:#3d3555;font-weight:500;}
+  body.dark .care-list li{color:#d9d0f0;}
+  .care-list i{color:var(--green);margin-top:2px;}
+  .download-btn{
+    margin-top:16px;width:100%;border:none;border-radius:13px;padding:13px;
+    background:linear-gradient(135deg,var(--pink),var(--purple-dark));color:#fff;
+    font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .download-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .result-placeholder{text-align:center;padding:30px 10px;color:var(--muted);}
+  .result-placeholder i{font-size:30px;color:var(--purple-dark);margin-bottom:12px;display:block;}
+  .result-placeholder p{font-size:13px;margin:0;}
+
+  .voice-panel{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:26px;padding-bottom:26px;}
+  .voice-orb{
+    width:96px;height:96px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #c084fc, #9333ea 70%);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;
+    box-shadow:0 10px 26px rgba(147,51,234,.35);margin-bottom:18px;
+    transition:box-shadow .2s ease;
+  }
+  .voice-orb.listening{box-shadow:0 0 0 10px rgba(147,51,234,.25), 0 10px 26px rgba(147,51,234,.35);}
+  .voice-panel h4{margin:0 0 8px;font-weight:800;}
+  .voice-panel p{margin:0;font-size:13px;color:var(--muted);max-width:260px;}
+  #voiceReply{font-size:13px;color:var(--ink);font-weight:600;max-width:260px;margin-top:10px;min-height:16px;}
+  .waveform{width:100%;height:34px;margin:22px 0;opacity:.6;}
+  .mic-btn{
+    width:52px;height:52px;border-radius:50%;border:none;
+    background:linear-gradient(135deg,var(--pink),var(--purple-dark));color:#fff;
+    font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .mic-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .mic-btn.listening{animation:pulseMic 1s ease-in-out infinite;}
+
+  .row-history{display:grid;grid-template-columns: 1fr;gap:18px;}
+  .history-search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;padding:9px 12px;font-size:13px;color:var(--muted);margin-bottom:12px;}
+  .history-search input{border:none;outline:none;background:none;color:var(--ink);width:100%;font-size:13px;}
+  .filter-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .filter-select{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12.5px;color:#54506a;background:var(--card);}
+  body.dark .filter-select{color:#c9c0e0;}
+  .hist-item{display:flex;align-items:center;gap:12px;padding:9px 4px;border-bottom:1px solid var(--line);}
+  .hist-item:last-child{border-bottom:none;}
+  .hist-item img{width:42px;height:42px;border-radius:10px;object-fit:cover;background:#eee;}
+  .hist-thumb-fallback{width:42px;height:42px;border-radius:10px;background:#f6f1fb;color:var(--purple-dark);display:flex;align-items:center;justify-content:center;flex:none;}
+  .hist-info{flex:1;min-width:0;}
+  .hist-info .name{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .hist-info .sev{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;margin-top:2px;}
+  .hist-time{margin-left:auto;font-size:11.5px;color:var(--muted);flex:none;}
+  .hist-actions{display:flex;gap:6px;flex:none;}
+  .icon-action{width:30px;height:30px;border-radius:9px;border:none;background:#f6f1fb;color:#6b5b95;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12.5px;}
+  .icon-action:hover{background:#ece2fb;}
+  .icon-action.danger:hover{background:#fde2ea;color:var(--red);}
+
+  .analytics-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .range-pill{border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:12.5px;color:#54506a;font-weight:600;display:flex;align-items:center;gap:8px;background:var(--card);}
+  body.dark .range-pill{color:#c9c0e0;}
+  .range-pill select{border:none;background:none;font:inherit;color:inherit;outline:none;}
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+  .kpi-box{background:#faf7ff;border-radius:14px;padding:14px 16px;}
+  body.dark .kpi-box{background:#241d38;}
+  .kpi-box .k-label{font-size:12px;color:var(--muted);font-weight:600;}
+  .kpi-box .k-value{font-size:20px;font-weight:800;margin:4px 0 4px;}
+  .kpi-box .k-delta{font-size:11.5px;font-weight:700;}
+  .charts-row{display:grid;grid-template-columns: 1.6fr 1fr; gap:18px;}
+  .mini-panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;}
+  .mini-panel h5{margin:0 0 10px;font-size:13px;font-weight:800;color:#42395c;}
+  body.dark .mini-panel h5{color:#d9d0f0;}
+
+  /* generic placeholder pages */
+  .placeholder-panel{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:40px 30px;text-align:center;
+  }
+  .placeholder-panel i{font-size:34px;color:var(--purple-dark);margin-bottom:14px;}
+  .placeholder-panel h4{margin:0 0 8px;font-size:16px;font-weight:800;}
+  .placeholder-panel p{margin:0;font-size:13px;color:var(--muted);max-width:420px;margin:0 auto;}
+
+  .guide-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  .guide-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:18px 20px;}
+  .guide-card .g-icon{
+    width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;margin-bottom:10px;
+  }
+  .guide-card h4{margin:0 0 6px;font-size:14.5px;font-weight:800;}
+  .guide-card p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  .profile-card{display:flex;align-items:center;gap:18px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;flex-wrap:wrap;}
+  .profile-avatar{width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,var(--pink));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:26px;flex:none;}
+  .profile-info{flex:1;min-width:180px;}
+  .profile-info h3{margin:0 0 4px;font-size:18px;font-weight:800;}
+  .profile-info p{margin:0;font-size:13px;color:var(--muted);}
+  .profile-fields{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px;}
+  .field-box{background:#faf7ff;border-radius:12px;padding:12px 14px;}
+  body.dark .field-box{background:#241d38;}
+  .field-box .fl{font-size:11.5px;color:var(--muted);font-weight:600;}
+  .field-box .fv{font-size:13.5px;font-weight:700;margin-top:2px;}
+  .field-box input{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;margin-top:4px;background:var(--card);color:var(--ink);}
+  .profile-edit-actions{display:flex;gap:10px;margin-top:18px;}
+  .profile-edit-actions .primary-btn, .profile-edit-actions .secondary-btn{margin-top:0;width:auto;flex:1;}
+
+  .settings-row{display:flex;align-items:center;justify-content:space-between;padding:16px 6px;border-bottom:1px solid var(--line);}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-row .s-name{font-weight:700;font-size:13.5px;}
+  .settings-row .s-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+  .toggle{width:40px;height:22px;border-radius:20px;position:relative;margin-left:auto;flex:none;cursor:pointer;background:#d8d3e6;transition:background .2s;border:none;}
+  .toggle::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .toggle.on{background:var(--pink);}
+  .toggle.on::after{left:20px;}
+  .settings-row.danger .s-name{color:var(--red);}
+  .settings-row .row-btn{border:none;background:#fde2ea;color:var(--red);font-weight:700;font-size:12.5px;padding:9px 16px;border-radius:10px;cursor:pointer;}
+
+  footer.disclaimer{text-align:center;font-size:12px;color:var(--muted);padding:18px 0 6px;}
+
+  @media (max-width: 1200px){
+    .flow-grid{grid-template-columns:1fr;}
+    .row-2col{grid-template-columns:1fr;}
+    .charts-row{grid-template-columns:1fr;}
+    .stats-row{grid-template-columns:repeat(2,1fr);}
+    .guide-grid{grid-template-columns:1fr;}
+    .profile-fields{grid-template-columns:1fr;}
+  }
+  @media (max-width: 760px){
+    .app{grid-template-columns:64px 1fr;}
+    .sidebar{padding:18px 8px;align-items:center;}
+    .brand-name,.brand-sub,.nav-link span{display:none;}
+    .nav-link{justify-content:center;padding:12px;}
+    .emergency-box{display:none;}
+    .stats-row{grid-template-columns:1fr 1fr;}
+    .search{width:180px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="toastHost"></div>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div class="brand" style="justify-content:center;margin-bottom:22px;">
+      <div class="brand-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div>
+        <div class="brand-name">MediScan</div>
+        <div class="brand-sub">Wound &amp; Burn Assessment</div>
+      </div>
+    </div>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" data-auth="login">Log In</button>
+      <button type="button" class="auth-tab" data-auth="register">Sign Up</button>
+    </div>
+    <form id="loginForm" class="auth-form">
+      <label for="login-email">Email</label>
+      <input type="email" id="login-email" required autocomplete="email">
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" required autocomplete="current-password">
+      <div class="auth-error" id="loginError"></div>
+      <button type="submit" class="primary-btn" id="loginSubmit"><span>Log In</span></button>
+    </form>
+    <form id="registerForm" class="auth-form hidden">
+      <label for="reg-name">Full Name</label>
+      <input type="text" id="reg-name" required autocomplete="name">
+      <label for="reg-email">Email</label>
+      <input type="email" id="reg-email" required autocomplete="email">
+      <label for="reg-password">Password</label>
+      <input type="password" id="reg-password" required minlength="6" autocomplete="new-password">
+      <div class="auth-error" id="registerError"></div>
+      <button type="submit" class="primary-btn" id="registerSubmit"><span>Create Account</span></button>
+    </form>
+    <p class="auth-hint">Your data stays private to your account. MediScan is for informational purposes only and is not a substitute for professional medical advice.</p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app hidden" id="appRoot">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div>
+        <div class="brand-name">MediScan</div>
+        <div class="brand-sub">Wound &amp; Burn Assessment</div>
+      </div>
+    </div>
+
+    <button class="nav-link active" data-target="dashboard"><i class="fa-solid fa-grip"></i><span>Dashboard</span></button>
+    <button class="nav-link" data-target="assessment"><i class="fa-solid fa-circle-plus"></i><span>New Assessment</span></button>
+    <button class="nav-link" data-target="history"><i class="fa-solid fa-clock-rotate-left"></i><span>History</span></button>
+    <button class="nav-link" data-target="reports"><i class="fa-solid fa-file-lines"></i><span>Reports</span></button>
+    <button class="nav-link" data-target="analytics"><i class="fa-solid fa-chart-simple"></i><span>Analytics</span></button>
+    <button class="nav-link" data-target="emergency"><i class="fa-solid fa-shield-heart"></i><span>Emergency Guide</span></button>
+    <button class="nav-link" data-target="profile"><i class="fa-regular fa-user"></i><span>Profile</span></button>
+    <button class="nav-link" data-target="settings"><i class="fa-solid fa-gear"></i><span>Settings</span></button>
+
+    <div class="emergency-box">
+      <p>In case of emergency</p>
+      <a id="emergencyCallBtn" class="call-btn" href="tel:108"><i class="fa-solid fa-phone"></i> Call 108</a>
+      <div class="logout-link" id="sidebarLogout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="topbar">
+      <div class="welcome">
+        <h1 id="welcomeHeading">Welcome back! 👋</h1>
+        <p>Your health is our priority</p>
+      </div>
+      <div class="top-actions">
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="globalSearch" placeholder="Search assessments..."></div>
+        <div class="icon-btn"><i class="fa-regular fa-bell"></i><span class="dot"></span></div>
+        <div class="avatar" id="topAvatar" data-target="profile" title="View profile">A</div>
+      </div>
+    </div>
+
+    <div class="pages">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="page active" id="dashboard">
+
+        <div class="promo">
+          <div>
+            <h2>AI-Powered. Safe Care.</h2>
+            <p>Get instant AI analysis of wounds, burns and injuries with personalized care guidance.</p>
+            <button class="promo-btn" data-target="assessment">New Assessment <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+          <div class="promo-art">
+            <div class="promo-ring promo-ring-1"></div>
+            <div class="promo-ring promo-ring-2"></div>
+            <div class="promo-globe">
+              <i class="fa-solid fa-shield-heart"></i>
+            </div>
+            <i class="fa-solid fa-heart promo-particle p1"></i>
+            <i class="fa-solid fa-heart promo-particle p2"></i>
+            <span class="promo-particle p3"></span>
+            <span class="promo-particle p4"></span>
+            <span class="promo-particle p5"></span>
+          </div>
+        </div>
+
+        <div class="stats-row" id="statsRow">
+          <div class="stat-card">
+            <div class="label">Total Assessments</div>
+            <div class="value" id="statTotal">–</div>
+            <div class="delta up"><i class="fa-solid fa-arrow-up"></i> <span id="statThisMonth">0</span> this month</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Low Severity</div>
+            <div class="value" id="statLow">–</div>
+            <div class="delta green"><i class="fa-solid fa-circle" style="font-size:6px;"></i> <span id="statLowPct">0%</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Moderate Severity</div>
+            <div class="value" id="statModerate">–</div>
+            <div class="delta orange"><i class="fa-solid fa-circle" style="font-size:6px;"></i> <span id="statModeratePct">0%</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Severe Severity</div>
+            <div class="value" id="statSevere">–</div>
+            <div class="delta red"><i class="fa-solid fa-circle" style="font-size:6px;"></i> <span id="statSeverePct">0%</span></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:20px;">
+          <div class="panel-head"><h3>Urgency Overview</h3></div>
+          <div class="stats-row" id="urgencyRow" style="margin:0;">
+            <div class="stat-card">
+              <div class="label">Routine</div>
+              <div class="value" id="statRoutine" style="color:var(--green);">–</div>
+              <div class="delta green"><i class="fa-solid fa-circle" style="font-size:6px;"></i> <span id="statRoutinePct">0%</span></div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Urgent</div>
+              <div class="value" id="statUrgent" style="color:var(--orange);">–</div>
+              <div class="delta orange"><i class="fa-solid fa-circle" style="font-size:6px;"></i> <span id="statUrgentPct">0%</span></div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Emergency</div>
+              <div class="value" id="statEmergency" style="color:var(--red);">–</div>
+              <div class="delta red"><i class="fa-solid fa-circle" style="font-size:6px;"></i> <span id="statEmergencyPct">0%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row-2col">
+          <div class="panel">
+            <div class="panel-head"><h3>Severity Distribution</h3></div>
+            <div class="donut-wrap" id="severityDonutWrap">
+              <div class="donut">
+                <svg width="150" height="150" viewBox="0 0 150 150" style="transform:rotate(-90deg);" id="donutSvg">
+                  <circle cx="75" cy="75" r="60" fill="none" stroke="#f1eaf9" stroke-width="18"/>
+                </svg>
+                <div class="donut-center"><div class="n" id="donutTotal">0</div><div class="t">Total</div></div>
+              </div>
+              <div class="legend" id="severityLegend"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Assessments</h3><span class="view-all" data-target="history">View All</span></div>
+            <div id="recentList"><p style="color:var(--muted);font-size:13px;">Loading…</p></div>
+          </div>
+        </div>
+
+        <div class="row-2col">
+          <div class="panel">
+            <div class="panel-head"><h3>Wound Classification Distribution</h3></div>
+            <div style="display:flex;flex-direction:column;align-items:center;" id="dashWoundTypeWrap"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Urgency Distribution</h3></div>
+            <div class="donut-wrap" id="urgencyDonutWrap">
+              <div class="donut">
+                <svg width="150" height="150" viewBox="0 0 150 150" style="transform:rotate(-90deg);" id="urgencyDonutSvg">
+                  <circle cx="75" cy="75" r="60" fill="none" stroke="#f1eaf9" stroke-width="18"/>
+                </svg>
+                <div class="donut-center"><div class="n" id="urgencyDonutTotal">0</div><div class="t">Total</div></div>
+              </div>
+              <div class="legend" id="urgencyLegend"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ NEW ASSESSMENT ============ -->
+      <section class="page" id="assessment">
+        <div class="page-header">
+          <div class="page-icon"><i class="fa-solid fa-circle-plus"></i></div>
+          <div><h2>New Assessment</h2><p class="sub">Upload a photo and describe your injury for an instant AI read.</p></div>
+        </div>
+
+        <div class="flow-grid">
+          <div class="panel">
+            <div class="panel-title-row">
+              <span style="font-weight:800;font-size:15px;">Upload Wound Image</span>
+              <span class="step-badge" style="color:var(--pink-dark);">Required</span>
+            </div>
+            <p style="font-size:12px;color:var(--muted);margin:2px 0 0;">The model is multimodal — a clear wound photo is required for analysis</p>
+            <div class="upload-box empty" id="uploadBox">
+              <img id="uploadPreview" alt="wound preview">
+              <div class="cam-btn"><i class="fa-solid fa-camera"></i></div>
+              <div class="change-pill"><i class="fa-regular fa-image"></i> Tap to change image</div>
+            </div>
+            <input type="file" id="af-image" accept="image/png,image/jpeg,image/webp" class="hidden">
+
+            <div class="field-label" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>Describe Symptoms / Wound</span>
+              <span class="step-badge" style="color:var(--pink-dark);">Required</span>
+            </div>
+            <div class="field-with-mic">
+              <textarea id="af-description" class="field-textarea" placeholder="Describe the wound, symptoms, pain, redness, swelling, bleeding, etc."></textarea>
+              <button type="button" class="mic-inline" id="descMicBtn" title="Dictate description"><i class="fa-solid fa-microphone"></i></button>
+            </div>
+
+            <button class="primary-btn" id="af-submit" style="margin-top:20px;"><span>Analyze Wound</span></button>
+          </div>
+
+          <div class="panel" id="resultPanel">
+            <span style="font-weight:800;font-size:15px;">AI Analysis Result</span>
+            <div id="resultContent">
+              <div class="result-placeholder">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <p>Fill in the details on the left and click <strong>Analyze Injury</strong> to get your AI assessment, severity level, and care guidance.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel voice-panel">
+            <span style="font-weight:800;font-size:15px;align-self:flex-start;">Voice Assistant</span>
+            <div class="voice-orb" id="voiceOrb"><i class="fa-solid fa-waveform-lines"></i></div>
+            <h4>I'm here to help you!</h4>
+            <p>Tap the mic and ask about your severity, or what to do next.</p>
+            <svg class="waveform" viewBox="0 0 300 34" preserveAspectRatio="none">
+              <polyline fill="none" stroke="#c084fc" stroke-width="2"
+                points="0,17 10,17 15,6 20,28 25,10 30,24 35,17 45,17 50,3 55,30 60,14 65,20 70,17 80,17 85,8 90,26 95,17 105,17 110,4 115,29 120,14 125,20 130,17 140,17 145,9 150,25 155,17 165,17 170,6 175,28 180,17 190,17 195,10 200,24 205,17 215,17 220,4 225,29 230,14 240,17 250,17 255,8 260,26 265,17 275,17 280,10 285,24 290,17 300,17"/>
+            </svg>
+            <button class="mic-btn" id="voiceMicBtn"><i class="fa-solid fa-microphone"></i></button>
+            <div id="voiceReply"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ HISTORY ============ -->
+      <section class="page" id="history">
+        <div class="page-header">
+          <div class="page-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div><h2>Assessment History</h2><p class="sub">Every scan you've run, most recent first.</p></div>
+        </div>
+        <div class="row-history">
+          <div class="panel">
+            <div class="history-search"><i class="fa-solid fa-magnifying-glass"></i><input id="hist-search" placeholder="Search assessments..."></div>
+            <div class="filter-row">
+              <select class="filter-select" id="hist-severity">
+                <option value="">All Severity</option>
+                <option>Low</option>
+                <option>Moderate</option>
+                <option>Severe</option>
+              </select>
+              <select class="filter-select" id="hist-urgency">
+                <option value="">All Urgency</option>
+                <option>Routine</option>
+                <option>Urgent</option>
+                <option>Emergency</option>
+              </select>
+              <select class="filter-select" id="hist-type">
+                <option value="">All Types</option>
+                <option value="abrasion">Abrasion</option>
+                <option value="bruise">Bruise</option>
+                <option value="burn">Burn</option>
+                <option value="cut">Cut</option>
+                <option value="ingrown_nail">Ingrown Nail</option>
+                <option value="laceration">Laceration</option>
+                <option value="stab_wound">Stab Wound</option>
+                <option value="wound">Wound</option>
+              </select>
+            </div>
+            <div id="historyList"><p style="color:var(--muted);font-size:13px;">Loading…</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ REPORTS ============ -->
+      <section class="page" id="reports">
+        <div class="page-header">
+          <div class="page-icon"><i class="fa-solid fa-file-lines"></i></div>
+          <div><h2>Reports</h2><p class="sub">Download a PDF summary of any past assessment.</p></div>
+        </div>
+        <div class="row-history">
+          <div class="panel">
+            <div id="reportsList"><p style="color:var(--muted);font-size:13px;">Loading…</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ANALYTICS ============ -->
+      <section class="page" id="analytics">
+        <div class="page-header">
+          <div class="page-icon"><i class="fa-solid fa-chart-simple"></i></div>
+          <div><h2>Analytics Overview</h2><p class="sub">Trends across all your assessments.</p></div>
+        </div>
+        <div class="panel">
+          <div class="analytics-top">
+            <span style="font-weight:800;font-size:15px;" id="analyticsRangeLabel">Last 30 days</span>
+            <div class="range-pill">
+              <i class="fa-regular fa-calendar"></i>
+              <select id="an-range">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="365">Last 12 months</option>
+              </select>
+            </div>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi-box">
+              <div class="k-label">Assessments in Range</div>
+              <div class="k-value" id="kpiInRange">0</div>
+              <div class="k-delta" style="color:var(--purple-dark);" id="kpiInRangeDelta">–</div>
+            </div>
+            <div class="kpi-box">
+              <div class="k-label">Most Common Wound Type</div>
+              <div class="k-value" id="kpiTopType" style="color:var(--orange);">–</div>
+              <div class="k-delta" style="color:var(--muted);" id="kpiTopTypePct">–</div>
+            </div>
+            <div class="kpi-box">
+              <div class="k-label">Total Assessments (All-time)</div>
+              <div class="k-value" id="kpiAllTime">0</div>
+              <div class="k-delta" style="color:var(--muted);" id="kpiThisMonth">–</div>
+            </div>
+          </div>
+          <div class="charts-row">
+            <div class="mini-panel">
+              <h5>Assessments Over Time</h5>
+              <div id="timelineChartWrap"></div>
+            </div>
+            <div class="mini-panel" style="display:flex;flex-direction:column;align-items:center;">
+              <h5 style="align-self:flex-start;">Wound Type Distribution</h5>
+              <div id="analyticsWoundTypeWrap" style="width:100%;display:flex;flex-direction:column;align-items:center;"></div>
+            </div>
+          </div>
+          <div class="charts-row">
+            <div class="mini-panel" style="display:flex;flex-direction:column;align-items:center;">
+              <h5 style="align-self:flex-start;">Severity Distribution</h5>
+              <div id="analyticsSeverityWrap" style="width:100%;display:flex;flex-direction:column;align-items:center;"></div>
+            </div>
+            <div class="mini-panel" style="display:flex;flex-direction:column;align-items:center;">
+              <h5 style="align-self:flex-start;">Urgency Distribution</h5>
+              <div id="analyticsUrgencyWrap" style="width:100%;display:flex;flex-direction:column;align-items:center;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ EMERGENCY GUIDE ============ -->
+      <section class="page" id="emergency">
+        <div class="page-header">
+          <div class="page-icon"><i class="fa-solid fa-shield-heart"></i></div>
+          <div><h2>Emergency Guide</h2><p class="sub">Quick reference for common urgent situations.</p></div>
+        </div>
+        <div class="guide-grid" id="guideGrid">
+          <p style="color:var(--muted);font-size:13px;">Loading…</p>
+        </div>
+      </section>
+
+      <!-- ============ PROFILE ============ -->
+      <section class="page" id="profile">
+        <div class="page-header">
+          <div class="page-icon"><i class="fa-regular fa-user"></i></div>
+          <div><h2>Profile</h2><p class="sub">Your personal and medical details.</p></div>
+        </div>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profileAvatar">A</div>
+          <div class="profile-info">
+            <h3 id="profileName">–</h3>
+            <p id="profileEmail">–</p>
+          </div>
+          <button class="secondary-btn" id="profileEditBtn">Edit Profile</button>
+        </div>
+        <div class="panel">
+          <div class="profile-fields" id="profileFields"></div>
+          <div class="profile-edit-actions hidden" id="profileEditActions">
+            <button class="secondary-btn" id="profileCancelBtn">Cancel</button>
+            <button class="primary-btn" id="profileSaveBtn"><span>Save Changes</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section class="page" id="settings">
+        <div class="page-header">
+          <div class="page-icon"><i class="fa-solid fa-gear"></i></div>
+          <div><h2>Settings</h2><p class="sub">Manage how MediScan works for you.</p></div>
+        </div>
+        <div class="panel">
+          <div class="settings-row">
+            <div><div class="s-name">Push Notifications</div><div class="s-desc">Get alerts for reports and assessment updates.</div></div>
+            <button class="toggle" id="setting-pushNotifications" data-key="pushNotifications"></button>
+          </div>
+          <div class="settings-row">
+            <div><div class="s-name">Dark Mode</div><div class="s-desc">Switch to a darker color theme.</div></div>
+            <button class="toggle" id="setting-darkMode" data-key="darkMode"></button>
+          </div>
+          <div class="settings-row">
+            <div><div class="s-name">Email Alerts</div><div class="s-desc">Receive an email summary for new assessments.</div></div>
+            <button class="toggle" id="setting-emailAlerts" data-key="emailAlerts"></button>
+          </div>
+          <div class="settings-row danger">
+            <div><div class="s-name">Log Out</div><div class="s-desc">Sign out of MediScan on this device.</div></div>
+            <button class="row-btn" id="settingsLogout">Log Out</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="disclaimer">Disclaimer: This app is for informational purposes only and not a substitute for professional medical advice, diagnosis or treatment.</footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var TOKEN_KEY = 'mediscan_token';
+  var SEVERITY_COLORS = { Low:'#22c55e', Moderate:'#f59e0b', Severe:'#f43f5e', Unknown:'#8b83a1' };
+  var URGENCY_COLORS = { Routine:'#22c55e', Urgent:'#f59e0b', Emergency:'#f43f5e', Unknown:'#8b83a1' };
+  var WOUND_LABELS = { abrasion:'Abrasion', bruise:'Bruise', burn:'Burn', cut:'Cut', ingrown_nail:'Ingrown Nail', laceration:'Laceration', stab_wound:'Stab Wound', wound:'Wound' };
+  var WOUND_ICONS = { abrasion:'fa-band-aid', bruise:'fa-hand-dots', burn:'fa-fire', cut:'fa-droplet', ingrown_nail:'fa-hand', laceration:'fa-staff-snake', stab_wound:'fa-syringe', wound:'fa-notes-medical' };
+  var WOUND_COLORS = ['#ec4899','#8b5cf6','#f59e0b','#22c55e','#38bdf8','#f43f5e','#a855f7','#14b8a6'];
+  var WOUND_CLASS_ORDER = ['abrasion','bruise','burn','cut','ingrown_nail','laceration','stab_wound','wound'];
+
+  function woundLabel(cls){ return WOUND_LABELS[cls] || (cls ? cls : 'Unclassified'); }
+
+  var state = {
+    token: localStorage.getItem(TOKEN_KEY) || null,
+    user: null,
+    settings: null,
+    lastAssessment: null,
+    imageFile: null,
+    lastVoiceUtterance: ''
+  };
+
+  function $(sel, root){ return (root || document).querySelector(sel); }
+  function $all(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function esc(str){
+    return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  // ---------------- toast ----------------
+  function toast(message, type){
+    var host = $('#toastHost');
+    var t = document.createElement('div');
+    t.className = 'toast' + (type ? ' ' + type : '');
+    t.textContent = message;
+    host.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3800);
+  }
+
+  // ---------------- API helper ----------------
+  function api(path, options){
+    options = options || {};
+    var opts = {};
+    for (var k in options) opts[k] = options[k];
+    opts.headers = {};
+    for (var h in (options.headers || {})) opts.headers[h] = options.headers[h];
+    if (state.token) opts.headers['Authorization'] = 'Bearer ' + state.token;
+    if (opts.body && !(opts.body instanceof FormData)) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(opts.body);
+    }
+    return fetch(path, opts).then(function(res){
+      return res.text().then(function(text){
+        var data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+        if (!res.ok) {
+          if (res.status === 401) logout(true);
+          var msg = (data && data.message) ? data.message : ('Request failed (' + res.status + ')');
+          throw new Error(msg);
+        }
+        return data;
+      });
+    });
+  }
+
+  function downloadReport(id, label){
+    return fetch('/api/assessments/' + id + '/report', {
+      headers: { Authorization: 'Bearer ' + state.token }
+    }).then(function(res){
+      if (!res.ok) throw new Error('Could not generate the report right now.');
+      return res.blob();
+    }).then(function(blob){
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'MediScan-Report-' + (label ? label.replace(/[^a-z0-9]+/gi, '-') : id) + '.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      toast('Report downloaded', 'success');
+    }).catch(function(err){
+      toast(err.message, 'error');
+    });
+  }
+
+  // ---------------- formatting helpers ----------------
+  function formatWhen(dateStr){
+    var d = new Date(dateStr);
+    var now = new Date();
+    var time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return 'Today, ' + time;
+    var yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (d.toDateString() === yest.toDateString()) return 'Yesterday, ' + time;
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ', ' + time;
+  }
+  function initialOf(name){ return (name || '?').trim().charAt(0).toUpperCase() || '?'; }
+
+  // ================= AUTH =================
+  function showAuth(){
+    $('#authScreen').classList.remove('hidden');
+    $('#appRoot').classList.add('hidden');
+  }
+  function showApp(){
+    $('#authScreen').classList.add('hidden');
+    $('#appRoot').classList.remove('hidden');
+  }
+  function logout(silent){
+    localStorage.removeItem(TOKEN_KEY);
+    state.token = null;
+    state.user = null;
+    document.body.classList.remove('dark');
+    showAuth();
+    if (!silent) toast('Logged out');
+  }
+
+  $all('.auth-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      $all('.auth-tab').forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      var which = tab.dataset.auth;
+      $('#loginForm').classList.toggle('hidden', which !== 'login');
+      $('#registerForm').classList.toggle('hidden', which !== 'register');
+    });
+  });
+
+  function setBtnLoading(btn, loading, labelWhileLoading){
+    if (loading) {
+      btn.disabled = true;
+      btn.dataset.origHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span><span>' + (labelWhileLoading || 'Please wait…') + '</span>';
+    } else {
+      btn.disabled = false;
+      if (btn.dataset.origHtml) btn.innerHTML = btn.dataset.origHtml;
+    }
+  }
+
+  $('#loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var errEl = $('#loginError'); errEl.textContent = '';
+    var btn = $('#loginSubmit');
+    setBtnLoading(btn, true, 'Logging in…');
+    api('/api/auth/login', { method: 'POST', body: {
+      email: $('#login-email').value.trim(),
+      password: $('#login-password').value
+    }}).then(function(data){
+      state.token = data.token;
+      state.user = data.user;
+      localStorage.setItem(TOKEN_KEY, data.token);
+      initApp();
+    }).catch(function(err){
+      errEl.textContent = err.message;
+    }).finally(function(){ setBtnLoading(btn, false); });
+  });
+
+  $('#registerForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var errEl = $('#registerError'); errEl.textContent = '';
+    var btn = $('#registerSubmit');
+    setBtnLoading(btn, true, 'Creating account…');
+    api('/api/auth/register', { method: 'POST', body: {
+      name: $('#reg-name').value.trim(),
+      email: $('#reg-email').value.trim(),
+      password: $('#reg-password').value
+    }}).then(function(data){
+      state.token = data.token;
+      state.user = data.user;
+      localStorage.setItem(TOKEN_KEY, data.token);
+      toast('Account created — welcome to MediScan!', 'success');
+      initApp();
+    }).catch(function(err){
+      errEl.textContent = err.message;
+    }).finally(function(){ setBtnLoading(btn, false); });
+  });
+
+  $('#sidebarLogout').addEventListener('click', function(){ logout(); });
+  $('#settingsLogout').addEventListener('click', function(){ logout(); });
+
+  // ================= NAV =================
+  var pageLoaders = {
+    dashboard: loadDashboard,
+    history: loadHistory,
+    reports: loadReports,
+    analytics: loadAnalytics,
+    emergency: loadEmergency,
+    profile: renderProfileView
+  };
+
+  function activate(target){
+    $all('.nav-link').forEach(function(btn){
+      btn.classList.toggle('active', btn.dataset.target === target);
+    });
+    $all('.page').forEach(function(page){ page.classList.remove('active'); });
+    var elp = document.getElementById(target);
+    if (elp) {
+      elp.style.animation = 'none';
+      void elp.offsetWidth;
+      elp.style.animation = '';
+      elp.classList.add('active');
+    }
+    if (pageLoaders[target]) pageLoaders[target]();
+  }
+
+  $all('.nav-link').forEach(function(btn){
+    btn.addEventListener('click', function(){ activate(btn.dataset.target); });
+  });
+  $all('[data-target]:not(.nav-link)').forEach(function(elp){
+    elp.addEventListener('click', function(){ activate(elp.dataset.target); });
+  });
+
+  $('#globalSearch').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') {
+      var v = e.target.value.trim();
+      activate('history');
+      $('#hist-search').value = v;
+      loadHistory();
+    }
+  });
+
+  // ================= INIT / HEADER =================
+  function applyDarkMode(on){
+    document.body.classList.toggle('dark', !!on);
+  }
+
+  function renderHeader(){
+    if (!state.user) return;
+    var firstName = (state.user.name || '').split(' ')[0] || 'there';
+    $('#welcomeHeading').textContent = 'Welcome back, ' + firstName + '! 👋';
+    $('#topAvatar').textContent = initialOf(state.user.name);
+  }
+
+  function initApp(){
+    showApp();
+    api('/api/auth/me').then(function(res){
+      state.user = res.user;
+      renderHeader();
+      return api('/api/settings');
+    }).then(function(res){
+      state.settings = res.settings || { pushNotifications:true, darkMode:false, emailAlerts:true };
+      applyDarkMode(state.settings.darkMode);
+      renderSettingsToggles();
+      return api('/api/emergency-guide');
+    }).then(function(res){
+      state.emergencyNumber = res.emergencyNumber || '108';
+      state.guides = res.guides || [];
+      var btn = $('#emergencyCallBtn');
+      btn.href = 'tel:' + state.emergencyNumber;
+      btn.innerHTML = '<i class="fa-solid fa-phone"></i> Call ' + esc(state.emergencyNumber);
+      renderGuides();
+    }).catch(function(err){
+      console.error(err);
+    }).finally(function(){
+      activate('dashboard');
+    });
+  }
+
+  // ================= DASHBOARD =================
+  function loadDashboard(){
+    Promise.all([
+      api('/api/dashboard/stats'),
+      api('/api/dashboard/recent?limit=5'),
+      api('/api/analytics/wound-types')
+    ]).then(function(results){
+      renderStats(results[0].stats);
+      renderRecent(results[1].assessments || []);
+      renderDashboardWoundTypes(results[2]);
+    }).catch(function(err){ toast(err.message, 'error'); });
+  }
+
+  function renderDonut(svgSel, totalSel, legendSel, segments, total){
+    var circumference = 2 * Math.PI * 60;
+    $(totalSel).textContent = total;
+    var svg = $(svgSel);
+    svg.innerHTML = '<circle cx="75" cy="75" r="60" fill="none" stroke="#f1eaf9" stroke-width="18"/>';
+    var offset = 0;
+    segments.forEach(function(seg){
+      if (seg.pct <= 0) return;
+      var len = (seg.pct / 100) * circumference;
+      var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', 75); circle.setAttribute('cy', 75); circle.setAttribute('r', 60);
+      circle.setAttribute('fill', 'none'); circle.setAttribute('stroke', seg.color);
+      circle.setAttribute('stroke-width', 18);
+      circle.setAttribute('stroke-dasharray', len.toFixed(1) + ' ' + circumference.toFixed(1));
+      circle.setAttribute('stroke-dashoffset', (-offset).toFixed(1));
+      circle.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(circle);
+      offset += len;
+    });
+    $(legendSel).innerHTML = segments.map(function(seg){
+      return '<div class="legend-item"><span class="sw" style="background:' + seg.color + ';"></span>' + esc(seg.label) + ' <span class="pct">' + seg.pct + '%</span></div>';
+    }).join('');
+  }
+
+  function renderStats(stats){
+    $('#statTotal').textContent = stats.total;
+    $('#statThisMonth').textContent = stats.thisMonth;
+    $('#statLow').textContent = stats.low.count;
+    $('#statLowPct').textContent = stats.low.pct + '%';
+    $('#statModerate').textContent = stats.moderate.count;
+    $('#statModeratePct').textContent = stats.moderate.pct + '%';
+    $('#statSevere').textContent = stats.severe.count;
+    $('#statSeverePct').textContent = stats.severe.pct + '%';
+
+    $('#statRoutine').textContent = stats.urgency.routine.count;
+    $('#statRoutinePct').textContent = stats.urgency.routine.pct + '%';
+    $('#statUrgent').textContent = stats.urgency.urgent.count;
+    $('#statUrgentPct').textContent = stats.urgency.urgent.pct + '%';
+    $('#statEmergency').textContent = stats.urgency.emergency.count;
+    $('#statEmergencyPct').textContent = stats.urgency.emergency.pct + '%';
+
+    renderDonut('#donutSvg', '#donutTotal', '#severityLegend', [
+      { pct: stats.low.pct, color: SEVERITY_COLORS.Low, label: 'Low' },
+      { pct: stats.moderate.pct, color: SEVERITY_COLORS.Moderate, label: 'Moderate' },
+      { pct: stats.severe.pct, color: SEVERITY_COLORS.Severe, label: 'Severe' }
+    ], stats.total);
+
+    renderDonut('#urgencyDonutSvg', '#urgencyDonutTotal', '#urgencyLegend', [
+      { pct: stats.urgency.routine.pct, color: URGENCY_COLORS.Routine, label: 'Routine' },
+      { pct: stats.urgency.urgent.pct, color: URGENCY_COLORS.Urgent, label: 'Urgent' },
+      { pct: stats.urgency.emergency.pct, color: URGENCY_COLORS.Emergency, label: 'Emergency' }
+    ], stats.total);
+  }
+
+  function renderWoundTypeChart(wrap, data){
+    var breakdown = data.breakdown || [];
+    if (!breakdown.length) {
+      wrap.innerHTML = '<div class="result-placeholder" style="padding:16px 6px;"><p>No assessments yet.</p></div>';
+      return;
+    }
+    var circumference = 2 * Math.PI * 42;
+    var offset = 0;
+    var circles = '<circle cx="55" cy="55" r="42" fill="none" stroke="#f1eaf9" stroke-width="14"/>';
+    var legend = '';
+    breakdown.forEach(function(b){
+      var idx = WOUND_CLASS_ORDER.indexOf(b.type);
+      var color = WOUND_COLORS[idx >= 0 ? idx : 0];
+      var len = (b.pct / 100) * circumference;
+      circles += '<circle cx="55" cy="55" r="42" fill="none" stroke="' + color + '" stroke-width="14" stroke-dasharray="' + len.toFixed(1) + ' ' + circumference.toFixed(1) + '" stroke-dashoffset="' + (-offset).toFixed(1) + '" transform="rotate(-90 55 55)"/>';
+      offset += len;
+      legend += '<div style="display:flex;align-items:center;gap:6px;"><span class="sev-dot" style="background:' + color + ';"></span>' + esc(woundLabel(b.type)) + ' <span style="margin-left:auto;color:var(--muted);">' + b.pct + '%</span></div>';
+    });
+    wrap.innerHTML =
+      '<svg width="110" height="110" viewBox="0 0 110 110">' + circles + '</svg>' +
+      '<div style="width:100%;margin-top:10px;font-size:11.5px;font-weight:600;display:flex;flex-direction:column;gap:6px;">' + legend + '</div>';
+  }
+
+  function renderDashboardWoundTypes(data){
+    renderWoundTypeChart($('#dashWoundTypeWrap'), data);
+  }
+
+  function thumbHtml(a){
+    if (a.imageUrl) return '<img class="recent-thumb" src="' + esc(a.imageUrl) + '" alt="">';
+    var icon = WOUND_ICONS[a.woundClass] || 'fa-notes-medical';
+    return '<div class="recent-thumb" style="background:#f6f1fb;color:var(--purple-dark);"><i class="fa-solid ' + icon + '"></i></div>';
+  }
+
+  function renderRecent(list){
+    var host = $('#recentList');
+    if (!list.length) {
+      host.innerHTML = '<p style="color:var(--muted);font-size:13px;">No assessments yet. Start a <a data-target="assessment" style="color:var(--pink-dark);font-weight:700;cursor:pointer;">new assessment</a> to see it here.</p>';
+      $all('[data-target]', host).forEach(function(elp){ elp.addEventListener('click', function(){ activate(elp.dataset.target); }); });
+      return;
+    }
+    host.innerHTML = list.map(function(a){
+      var sevColor = SEVERITY_COLORS[a.severity] || SEVERITY_COLORS.Unknown;
+      var urgColor = URGENCY_COLORS[a.urgency] || URGENCY_COLORS.Unknown;
+      return '<div class="recent-item">' + thumbHtml(a) +
+        '<div class="recent-info"><div class="name">' + esc(woundLabel(a.woundClass)) + '</div>' +
+        '<div class="sev" style="color:' + sevColor + ';"><span class="sev-dot" style="background:' + sevColor + ';"></span>' + esc(a.severity || 'Pending') +
+        '<span style="margin-left:8px;color:' + urgColor + ';"><span class="sev-dot" style="background:' + urgColor + ';"></span>' + esc(a.urgency || '') + '</span></div>' +
+        '<div class="recent-info" style="margin-top:2px;font-size:11.5px;color:var(--muted);">' + (a.woundConfidence != null ? a.woundConfidence + '% confidence' : '') + '</div></div>' +
+        '<div class="recent-time">' + formatWhen(a.createdAt) + '</div></div>';
+    }).join('');
+  }
+
+  // ================= NEW ASSESSMENT =================
+  $('#uploadBox').addEventListener('click', function(){ $('#af-image').click(); });
+  $('#af-image').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    state.imageFile = file;
+    var url = URL.createObjectURL(file);
+    $('#uploadPreview').src = url;
+    $('#uploadBox').classList.remove('empty');
+  });
+
+  $('#af-submit').addEventListener('click', function(){
+    var description = $('#af-description').value.trim();
+
+    if (!state.imageFile) {
+      toast('A wound image is required — the model needs both an image and a description.', 'error');
+      return;
+    }
+    if (!description) {
+      toast('A symptom / wound description is required — the model needs both an image and a description.', 'error');
+      return;
+    }
+
+    var fd = new FormData();
+    fd.append('image', state.imageFile);
+    fd.append('description', description);
+
+    var btn = $('#af-submit');
+    setBtnLoading(btn, true, 'Analyzing…');
+    $('#resultContent').innerHTML = '<div class="result-placeholder"><span class="spinner" style="border-top-color:var(--purple-dark);border-color:rgba(139,92,246,.25);width:26px;height:26px;"></span><p style="margin-top:12px;">Running AI analysis…</p></div>';
+
+    api('/api/assessments', { method: 'POST', body: fd }).then(function(res){
+      state.lastAssessment = res.assessment;
+      renderAssessmentResult(res.assessment);
+      speakResultSummary(res.assessment, true);
+    }).catch(function(err){
+      toast(err.message, 'error');
+      $('#resultContent').innerHTML = '<div class="result-placeholder"><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);"></i><p>' + esc(err.message) + '</p></div>';
+    }).finally(function(){ setBtnLoading(btn, false); });
+  });
+
+  function renderAssessmentResult(a){
+    var sevColor = SEVERITY_COLORS[a.severity] || SEVERITY_COLORS.Unknown;
+    var urgColor = URGENCY_COLORS[a.urgency] || URGENCY_COLORS.Unknown;
+    var icon = WOUND_ICONS[a.woundClass] || 'fa-notes-medical';
+
+    var failedNote = a.status === 'failed'
+      ? '<p style="font-size:11.5px;color:var(--red);margin:8px 0 0;">AI analysis had trouble completing. Your assessment was still saved — you can retry from History.</p>' : '';
+
+    $('#resultContent').innerHTML =
+      '<div class="result-check"><i class="fa-solid fa-check"></i></div>' +
+      '<div class="result-title">AI Wound Assessment</div>' +
+      (a.imageUrl ? '<img src="' + esc(a.imageUrl) + '" alt="wound" style="width:100%;max-height:200px;object-fit:cover;border-radius:14px;margin-bottom:14px;">' : '') +
+      '<div class="diag-card"><div><h4>' + esc(woundLabel(a.woundClass)) + '</h4>' +
+      '<div class="sub">Predicted Wound Type</div></div>' +
+      '<div class="diag-icon"><i class="fa-solid ' + icon + '"></i></div></div>' +
+      '<div class="stat-pair"><div><span class="tag">Wound Confidence</span><span class="conf-val">' + (a.woundConfidence || 0) + '%</span></div></div>' +
+      '<div class="stat-pair"><div><span class="tag">Severity</span><span class="sev-val" style="color:' + sevColor + ';">● ' + esc(a.severity || 'Unknown') + '</span></div>' +
+      '<div style="text-align:right;"><span class="tag">Severity Confidence</span><span class="conf-val">' + (a.severityConfidence || 0) + '%</span></div></div>' +
+      '<div class="stat-pair"><div><span class="tag">Urgency</span><span class="sev-val" style="color:' + urgColor + ';">● ' + esc(a.urgency || 'Unknown') + '</span></div>' +
+      '<div style="text-align:right;"><span class="tag">Urgency Confidence</span><span class="conf-val">' + (a.urgencyConfidence || 0) + '%</span></div></div>' +
+      failedNote +
+      '<button class="download-btn" id="downloadReportBtn">Download Report <i class="fa-solid fa-arrow-down"></i></button>';
+
+    $('#downloadReportBtn').addEventListener('click', function(){
+      downloadReport(a._id, woundLabel(a.woundClass));
+    });
+  }
+
+  // ================= VOICE ASSISTANT =================
+  var SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var recognizer = null;
+  var listeningTarget = null; // 'description' | 'assistant'
+
+  function say(text){
+    $('#voiceReply').textContent = text;
+    state.lastVoiceUtterance = text;
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(text);
+        u.rate = 1;
+        window.speechSynthesis.speak(u);
+      } catch (e) { /* speech synthesis unsupported/blocked, text reply still shown */ }
+    }
+  }
+
+  function speakResultSummary(a, announce){
+    if (!announce) return;
+    var msg = 'Analysis complete. This looks like a ' + woundLabel(a.woundClass).toLowerCase() +
+      ', ' + (a.severity || 'Unknown').toLowerCase() + ' severity, ' + (a.urgency || 'Unknown').toLowerCase() + ' urgency.';
+    say(msg);
+  }
+
+  function answerVoiceQuery(text){
+    var q = (text || '').toLowerCase();
+    var a = state.lastAssessment;
+
+    if (!a) {
+      say("You haven't completed an assessment yet — upload a wound image and description, then tap Analyze Wound first, and I can talk you through the results.");
+      return;
+    }
+    if (/severity|how bad|serious/.test(q)) {
+      say('Your last assessment came back as ' + a.severity + ' severity, with ' + a.severityConfidence + '% confidence.');
+    } else if (/urgen|how soon|emergency/.test(q)) {
+      say('Urgency was rated ' + a.urgency + ', with ' + a.urgencyConfidence + '% confidence.');
+    } else if (/wound|what is it|what type|diagnos/.test(q)) {
+      say('It looks like a ' + woundLabel(a.woundClass) + ', with ' + a.woundConfidence + '% confidence.');
+    } else if (/repeat|again/.test(q)) {
+      say(state.lastVoiceUtterance || 'I have nothing to repeat yet.');
+    } else if (/hi|hello|hey/.test(q)) {
+      say('Hi! Ask me about your wound type, severity, or urgency.');
+    } else {
+      say("I can tell you about your last assessment's wound type, severity, or urgency — try asking \"how severe is it?\"");
+    }
+  }
+
+  function startRecognition(target, onResult){
+    if (!SpeechRecognitionImpl) {
+      toast('Voice input is not supported in this browser. Try Chrome or Edge.', 'error');
+      return;
+    }
+    if (recognizer) { try { recognizer.stop(); } catch (e) {} }
+    recognizer = new SpeechRecognitionImpl();
+    recognizer.lang = 'en-US';
+    recognizer.interimResults = false;
+    recognizer.maxAlternatives = 1;
+    listeningTarget = target;
+
+    recognizer.onstart = function(){
+      if (target === 'description') $('#descMicBtn').classList.add('listening');
+      if (target === 'assistant') { $('#voiceMicBtn').classList.add('listening'); $('#voiceOrb').classList.add('listening'); }
+    };
+    recognizer.onerror = function(){
+      toast('Could not hear you clearly — please try again.', 'error');
+    };
+    recognizer.onend = function(){
+      $('#descMicBtn').classList.remove('listening');
+      $('#voiceMicBtn').classList.remove('listening');
+      $('#voiceOrb').classList.remove('listening');
+    };
+    recognizer.onresult = function(e){
+      var transcript = e.results[0][0].transcript;
+      onResult(transcript);
+    };
+    recognizer.start();
+  }
+
+  $('#descMicBtn').addEventListener('click', function(){
+    startRecognition('description', function(transcript){
+      var ta = $('#af-description');
+      ta.value = (ta.value ? ta.value + ' ' : '') + transcript;
+    });
+  });
+
+  $('#voiceMicBtn').addEventListener('click', function(){
+    if (!SpeechRecognitionImpl) {
+      // graceful fallback: just re-read the last result aloud
+      if (state.lastAssessment) speakResultSummary(state.lastAssessment, true);
+      else toast('Voice input is not supported in this browser. Try Chrome or Edge.', 'error');
+      return;
+    }
+    startRecognition('assistant', function(transcript){
+      answerVoiceQuery(transcript);
+    });
+  });
+
+  // ================= HISTORY =================
+  var histTimer = null;
+  $('#hist-search').addEventListener('input', function(){
+    clearTimeout(histTimer);
+    histTimer = setTimeout(loadHistory, 350);
+  });
+  $('#hist-severity').addEventListener('change', loadHistory);
+  $('#hist-urgency').addEventListener('change', loadHistory);
+  $('#hist-type').addEventListener('change', loadHistory);
+
+  function loadHistory(){
+    var params = new URLSearchParams();
+    var search = $('#hist-search').value.trim();
+    var severity = $('#hist-severity').value;
+    var urgency = $('#hist-urgency').value;
+    var type = $('#hist-type').value;
+    if (search) params.set('search', search);
+    if (severity) params.set('severity', severity);
+    if (urgency) params.set('urgency', urgency);
+    if (type) params.set('woundClass', type);
+    params.set('limit', '50');
+
+    api('/api/assessments?' + params.toString()).then(function(res){
+      renderHistoryList('#historyList', res.assessments || [], true);
+    }).catch(function(err){ toast(err.message, 'error'); });
+  }
+
+  function renderHistoryList(hostSel, list, withDelete){
+    var host = $(hostSel);
+    if (!list.length) {
+      host.innerHTML = '<div class="result-placeholder"><i class="fa-solid fa-magnifying-glass"></i><p>No assessments match. Try adjusting your search or filters.</p></div>';
+      return;
+    }
+    host.innerHTML = list.map(function(a){
+      var sevColor = SEVERITY_COLORS[a.severity] || SEVERITY_COLORS.Unknown;
+      var urgColor = URGENCY_COLORS[a.urgency] || URGENCY_COLORS.Unknown;
+      var icon = WOUND_ICONS[a.woundClass] || 'fa-notes-medical';
+      var img = a.imageUrl
+        ? '<img src="' + esc(a.imageUrl) + '" alt="">'
+        : '<div class="hist-thumb-fallback"><i class="fa-solid ' + icon + '"></i></div>';
+      var deleteBtn = withDelete ? '<button class="icon-action danger" data-action="delete" data-id="' + a._id + '" title="Delete"><i class="fa-solid fa-trash"></i></button>' : '';
+      return '<div class="hist-item">' + img +
+        '<div class="hist-info"><div class="name">' + esc(woundLabel(a.woundClass)) + (a.woundConfidence != null ? ' <span style="color:var(--muted);font-weight:600;font-size:11.5px;">(' + a.woundConfidence + '%)</span>' : '') + '</div>' +
+        '<div class="sev" style="color:' + sevColor + ';"><span class="sev-dot" style="background:' + sevColor + ';"></span>' + esc(a.severity || 'Pending') +
+        '<span style="margin-left:8px;color:' + urgColor + ';"><span class="sev-dot" style="background:' + urgColor + ';"></span>' + esc(a.urgency || '') + '</span></div></div>' +
+        '<div class="hist-time">' + formatWhen(a.createdAt) + '</div>' +
+        '<div class="hist-actions">' +
+        '<button class="icon-action" data-action="download" data-id="' + a._id + '" data-label="' + esc(woundLabel(a.woundClass) || a._id) + '" title="Download report"><i class="fa-solid fa-download"></i></button>' +
+        deleteBtn +
+        '</div></div>';
+    }).join('');
+
+    $all('[data-action="download"]', host).forEach(function(btn){
+      btn.addEventListener('click', function(){ downloadReport(btn.dataset.id, btn.dataset.label); });
+    });
+    $all('[data-action="delete"]', host).forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('Delete this assessment? This cannot be undone.')) return;
+        api('/api/assessments/' + btn.dataset.id, { method: 'DELETE' }).then(function(){
+          toast('Assessment deleted', 'success');
+          loadHistory();
+        }).catch(function(err){ toast(err.message, 'error'); });
+      });
+    });
+  }
+
+  // ================= REPORTS =================
+  function loadReports(){
+    api('/api/assessments?limit=50').then(function(res){
+      var analyzed = (res.assessments || []).filter(function(a){ return a.status === 'analyzed'; });
+      renderHistoryList('#reportsList', analyzed, false);
+      if (!analyzed.length) {
+        $('#reportsList').innerHTML = '<div class="result-placeholder"><i class="fa-solid fa-file-lines"></i><p>No reports yet. Complete a <a data-target="assessment" style="color:var(--pink-dark);font-weight:700;cursor:pointer;">new assessment</a> to generate your first one.</p></div>';
+        $all('[data-target]', $('#reportsList')).forEach(function(elp){ elp.addEventListener('click', function(){ activate(elp.dataset.target); }); });
+      }
+    }).catch(function(err){ toast(err.message, 'error'); });
+  }
+
+  // ================= ANALYTICS =================
+  $('#an-range').addEventListener('change', loadAnalytics);
+
+  function loadAnalytics(){
+    var days = Number($('#an-range').value);
+    var rangeLabels = { 7: 'Last 7 days', 30: 'Last 30 days', 90: 'Last 90 days', 365: 'Last 12 months' };
+    $('#analyticsRangeLabel').textContent = rangeLabels[days] || ('Last ' + days + ' days');
+
+    Promise.all([
+      api('/api/analytics/timeline?days=' + days),
+      api('/api/analytics/wound-types'),
+      api('/api/analytics/severity'),
+      api('/api/analytics/urgency'),
+      api('/api/dashboard/stats')
+    ]).then(function(results){
+      renderTimeline(results[0].timeline || []);
+      renderWoundTypeChart($('#analyticsWoundTypeWrap'), results[1]);
+      updateTopWoundTypeKpi(results[1]);
+      renderSimpleDonutChart($('#analyticsSeverityWrap'), results[2], SEVERITY_COLORS);
+      renderSimpleDonutChart($('#analyticsUrgencyWrap'), results[3], URGENCY_COLORS);
+      var stats = results[4].stats;
+      $('#kpiAllTime').textContent = stats.total;
+      $('#kpiThisMonth').textContent = stats.thisMonth + ' this month';
+    }).catch(function(err){ toast(err.message, 'error'); });
+  }
+
+  function updateTopWoundTypeKpi(data){
+    var breakdown = data.breakdown || [];
+    if (!breakdown.length) {
+      $('#kpiTopType').textContent = '–';
+      $('#kpiTopTypePct').textContent = 'No data yet';
+      return;
+    }
+    var sorted = breakdown.slice().sort(function(a, b){ return b.count - a.count; });
+    $('#kpiTopType').textContent = woundLabel(sorted[0].type);
+    $('#kpiTopTypePct').textContent = sorted[0].pct + '% of all assessments';
+  }
+
+  function renderSimpleDonutChart(wrap, data, colorMap){
+    var breakdown = data.breakdown || [];
+    if (!breakdown.length) {
+      wrap.innerHTML = '<div class="result-placeholder" style="padding:16px 6px;"><p>No assessments yet.</p></div>';
+      return;
+    }
+    var circumference = 2 * Math.PI * 42;
+    var offset = 0;
+    var circles = '<circle cx="55" cy="55" r="42" fill="none" stroke="#f1eaf9" stroke-width="14"/>';
+    var legend = '';
+    breakdown.forEach(function(b){
+      var color = colorMap[b.type] || '#8b83a1';
+      var len = (b.pct / 100) * circumference;
+      circles += '<circle cx="55" cy="55" r="42" fill="none" stroke="' + color + '" stroke-width="14" stroke-dasharray="' + len.toFixed(1) + ' ' + circumference.toFixed(1) + '" stroke-dashoffset="' + (-offset).toFixed(1) + '" transform="rotate(-90 55 55)"/>';
+      offset += len;
+      legend += '<div style="display:flex;align-items:center;gap:6px;"><span class="sev-dot" style="background:' + color + ';"></span>' + esc(b.type) + ' <span style="margin-left:auto;color:var(--muted);">' + b.pct + '%</span></div>';
+    });
+    wrap.innerHTML =
+      '<svg width="110" height="110" viewBox="0 0 110 110">' + circles + '</svg>' +
+      '<div style="width:100%;margin-top:10px;font-size:11.5px;font-weight:600;display:flex;flex-direction:column;gap:6px;">' + legend + '</div>';
+  }
+
+  function renderTimeline(timeline){
+    var total = timeline.reduce(function(sum, t){ return sum + t.count; }, 0);
+    $('#kpiInRange').textContent = total;
+    $('#kpiInRangeDelta').textContent = timeline.length ? (timeline.length + ' active day' + (timeline.length === 1 ? '' : 's')) : 'No activity yet';
+
+    var wrap = $('#timelineChartWrap');
+    if (!timeline.length) {
+      wrap.innerHTML = '<div class="result-placeholder" style="padding:20px 6px;"><p>No assessments in this range yet.</p></div>';
+      return;
+    }
+    var max = Math.max.apply(null, timeline.map(function(t){ return t.count; }).concat([1]));
+    var w = 380, h = 150, padTop = 14, padBottom = 22, padX = 6;
+    var innerH = h - padTop - padBottom;
+    var step = timeline.length > 1 ? (w - padX * 2) / (timeline.length - 1) : 0;
+    var points = timeline.map(function(t, i){
+      var x = padX + step * i;
+      var y = padTop + innerH - (t.count / max) * innerH;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    var lastPoint = points.split(' ').pop().split(',');
+
+    var fmt = function(dstr){ var d = new Date(dstr + 'T00:00:00'); return d.toLocaleDateString([], { day: 'numeric', month: 'short' }); };
+    var first = fmt(timeline[0].date);
+    var mid = fmt(timeline[Math.floor((timeline.length - 1) / 2)].date);
+    var last = fmt(timeline[timeline.length - 1].date);
+
+    wrap.innerHTML =
+      '<svg width="100%" height="150" viewBox="0 0 380 150" preserveAspectRatio="none">' +
+      '<line x1="0" y1="' + padTop + '" x2="380" y2="' + padTop + '" stroke="#f1eaf9"/>' +
+      '<line x1="0" y1="' + (padTop + innerH * 0.33) + '" x2="380" y2="' + (padTop + innerH * 0.33) + '" stroke="#f1eaf9"/>' +
+      '<line x1="0" y1="' + (padTop + innerH * 0.66) + '" x2="380" y2="' + (padTop + innerH * 0.66) + '" stroke="#f1eaf9"/>' +
+      '<line x1="0" y1="' + (padTop + innerH) + '" x2="380" y2="' + (padTop + innerH) + '" stroke="#f1eaf9"/>' +
+      '<polyline fill="none" stroke="#ec4899" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="' + points + '"/>' +
+      '<circle cx="' + lastPoint[0] + '" cy="' + lastPoint[1] + '" r="4" fill="#ec4899"/>' +
+      '</svg>' +
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;">' +
+      '<span>' + first + '</span><span>' + mid + '</span><span>' + last + '</span></div>';
+  }
+
+  // ================= EMERGENCY GUIDE =================
+  function loadEmergency(){
+    if (state.guides && state.guides.length) { renderGuides(); return; }
+    api('/api/emergency-guide').then(function(res){
+      state.emergencyNumber = res.emergencyNumber || '108';
+      state.guides = res.guides || [];
+      renderGuides();
+    }).catch(function(err){ toast(err.message, 'error'); });
+  }
+  function renderGuides(){
+    var host = $('#guideGrid');
+    if (!state.guides || !state.guides.length) {
+      host.innerHTML = '<div class="result-placeholder"><i class="fa-solid fa-shield-heart"></i><p>No emergency guides are available yet.</p></div>';
+      return;
+    }
+    host.innerHTML = state.guides.map(function(g){
+      return '<div class="guide-card"><div class="g-icon" style="background:' + esc(g.color) + ';"><i class="' + esc(g.icon) + '"></i></div>' +
+        '<h4>' + esc(g.title) + '</h4><p>' + esc(g.description) + '</p></div>';
+    }).join('');
+  }
+
+  // ================= PROFILE =================
+  var PROFILE_FIELDS = [
+    { key: 'age', label: 'Age', type: 'number' },
+    { key: 'bloodGroup', label: 'Blood Group', type: 'text' },
+    { key: 'allergies', label: 'Allergies', type: 'text' },
+    { key: 'emergencyContact', label: 'Emergency Contact', type: 'text' },
+    { key: 'location', label: 'Location', type: 'text' }
+  ];
+  var profileEditing = false;
+
+  function renderProfileView(){
+    api('/api/profile').then(function(res){
+      state.user = res.user;
+      renderHeader();
+      var u = state.user;
+      $('#profileAvatar').textContent = initialOf(u.name);
+      $('#profileName').textContent = u.name;
+      $('#profileEmail').textContent = u.email + (u.location ? ' · ' + u.location : '');
+      profileEditing = false;
+      renderProfileFields();
+    }).catch(function(err){ toast(err.message, 'error'); });
+  }
+
+  function renderProfileFields(){
+    var host = $('#profileFields');
+    var u = state.user || {};
+    if (!profileEditing) {
+      host.innerHTML = PROFILE_FIELDS.map(function(f){
+        var val = u[f.key];
+        return '<div class="field-box"><div class="fl">' + f.label + '</div><div class="fv">' + esc(val || 'Not set') + '</div></div>';
+      }).join('');
+      $('#profileEditActions').classList.add('hidden');
+      $('#profileEditBtn').classList.remove('hidden');
+    } else {
+      host.innerHTML = PROFILE_FIELDS.map(function(f){
+        var val = u[f.key] != null ? u[f.key] : '';
+        return '<div class="field-box"><div class="fl">' + f.label + '</div>' +
+          '<input type="' + f.type + '" data-field="' + f.key + '" value="' + esc(val) + '"></div>';
+      }).join('');
+      $('#profileEditActions').classList.remove('hidden');
+      $('#profileEditBtn').classList.add('hidden');
+    }
+  }
+
+  $('#profileEditBtn').addEventListener('click', function(){
+    profileEditing = true;
+    renderProfileFields();
+  });
+  $('#profileCancelBtn').addEventListener('click', function(){
+    profileEditing = false;
+    renderProfileFields();
+  });
+  $('#profileSaveBtn').addEventListener('click', function(){
+    var updates = {};
+    $all('#profileFields [data-field]').forEach(function(inp){
+      updates[inp.dataset.field] = inp.value;
+    });
+    var btn = $('#profileSaveBtn');
+    setBtnLoading(btn, true, 'Saving…');
+    api('/api/profile', { method: 'PUT', body: updates }).then(function(res){
+      state.user = res.user;
+      toast('Profile updated', 'success');
+      renderHeader();
+      profileEditing = false;
+      $('#profileName').textContent = state.user.name;
+      $('#profileEmail').textContent = state.user.email + (state.user.location ? ' · ' + state.user.location : '');
+      renderProfileFields();
+    }).catch(function(err){ toast(err.message, 'error'); }).finally(function(){ setBtnLoading(btn, false); });
+  });
+
+  // ================= SETTINGS =================
+  function renderSettingsToggles(){
+    if (!state.settings) return;
+    ['pushNotifications', 'darkMode', 'emailAlerts'].forEach(function(key){
+      var t = document.getElementById('setting-' + key);
+      t.classList.toggle('on', !!state.settings[key]);
+    });
+  }
+  $all('.toggle[data-key]').forEach(function(t){
+    t.addEventListener('click', function(){
+      var key = t.dataset.key;
+      var newVal = !t.classList.contains('on');
+      t.classList.toggle('on', newVal);
+      if (key === 'darkMode') applyDarkMode(newVal);
+      var body = {}; body[key] = newVal;
+      api('/api/settings', { method: 'PUT', body: body }).then(function(res){
+        state.settings = res.settings;
+        toast('Settings saved', 'success');
+      }).catch(function(err){
+        t.classList.toggle('on', !newVal);
+        if (key === 'darkMode') applyDarkMode(!newVal);
+        toast(err.message, 'error');
+      });
+    });
+  });
+
+  // ================= BOOTSTRAP =================
+  if (state.token) {
+    initApp();
+  } else {
+    showAuth();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+    "abrasion": 0,
+    "bruise": 1,
+    "burn": 2,
+    "cut": 3,
+    "ingrown_nail": 4,
+    "laceration": 5,
+    "stab_wound": 6,
+    "wound": 7
+}
