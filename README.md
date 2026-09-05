@@ -37,9 +37,12 @@ Severity Assessment
         ↓
 Care Guidance
 
-DASHBOARD IMAGES
-<img width="1912" height="917" alt="M1" src="https://github.com/user-attachments/assets/9ecd2466-832d-4418-99cb-0288e6b530f0" />
-<img width="1907" height="912" alt="M2" src="https://github.com/user-attachments/assets/4b5d7127-d7f5-4f9c-b438-899c490eb85c" />
-<img width="1917" height="966" alt="M3" src="https://github.com/user-attachments/assets/849e9bc6-6731-42f9-9e75-2c5f80fe3304" />
-<img width="1907" height="900" alt="M4" src="https://github.com/user-attachments/assets/336caed7-7755-4228-b180-59699117bab3" />
+
+
+##DASHBOARD IMAGES
+<img width="1912" height="917" alt="M1" src="https://github.com/user-attachments/assets/ef9b7e33-95ce-466d-9d93-60d13a029abb" />
+<img width="1907" height="912" alt="M2" src="https://github.com/user-attachments/assets/b53afcdd-d4c1-4dea-a281-f9e11bcb48db" />
+<img width="1907" height="900" alt="M4" src="https://github.com/user-attachments/assets/05a05ee0-9c6e-4682-8d10-ac6843ef8c77" />
+<img width="1917" height="966" alt="M3" src="https://github.com/user-attachments/assets/55b8ada9-3f43-4895-8399-fefcd476cd3c" />
+
 
